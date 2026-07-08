@@ -1,0 +1,35 @@
+{
+  "manifest_version": 3,
+  "name": "DSA Auto-Commit to GitHub",
+  "version": "1.0",
+  "description": "Automatically pushes your accepted LeetCode solutions to a GitHub repository.",
+  "permissions": [
+    "storage",
+    "scripting"
+  ],
+  "host_permissions": [
+    "https://leetcode.com/*",
+    "https://api.github.com/*"
+  ],
+  "action": {
+    "default_popup": "popup/popup.html"
+  },
+
+  "background": {
+    "service_worker": "background/background.js",
+    "type": "module"
+  },
+  "content_scripts": [
+    {
+      "matches": ["https://leetcode.com/problems/*"],
+      "js": ["content/content.js"],
+      "run_at": "document_idle"
+    }
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": ["content/interceptor.js"],
+      "matches": ["https://leetcode.com/*"]
+    }
+  ]
+}

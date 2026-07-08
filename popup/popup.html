@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>DSA Auto-Commit Settings</title>
+    <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+    <div class="container">
+        <h2>DSA Auto-Commit</h2>
+        
+        <div class="input-group">
+            <label for="pat">GitHub Fine-Grained PAT:</label>
+            <input type="password" id="pat" placeholder="github_pat_...">
+            <small>Requires 'Contents: Read and Write' permission.</small>
+        </div>
+        
+        <div class="input-group">
+            <label for="repo">GitHub Repository:</label>
+            <input type="text" id="repo" placeholder="username/repo-name">
+        </div>
+        
+        <button id="save-btn">Save Settings</button>
+        <p id="status-msg"></p>
+    </div>
+    <script src="popup.js"></script>
+</body>
+</html>
