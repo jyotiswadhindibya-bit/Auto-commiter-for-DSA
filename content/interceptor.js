@@ -1,24 +1,21 @@
-// Monkey-patch fetch to intercept LeetCode submissions
-(function() {
+
+(function () {
     console.log('[DSA Auto-Commit] Interceptor injected successfully!');
-    
+
     const originalFetch = window.fetch;
     let pendingSubmission = null;
 
-    window.fetch = async function(...args) {
+    window.fetch = async function (...args) {
         let url = args[0];
         let options = args[1] || {};
 
         if (typeof url !== 'string' && url.url) {
-            url = url.url; // Handle Request object
+            url = url.url;
         }
-        
-        // Log all fetch requests briefly to debug
         if (url.includes('/submit/') || url.includes('/check/')) {
             console.log('[DSA Auto-Commit] Fetch intercepted:', url);
         }
 
-        // Intercept Submission POST
         if (typeof url === 'string' && url.includes('/submit/')) {
             try {
                 if (options && options.body) {
@@ -40,7 +37,6 @@
 
         const response = await originalFetch.apply(this, args);
 
-        // Intercept Status Check GET
         if (typeof url === 'string' && url.includes('/check/') && pendingSubmission) {
             const clone = response.clone();
             clone.json().then(data => {
@@ -48,7 +44,7 @@
                 if (data.state === 'SUCCESS') {
                     if (data.status_msg === 'Accepted') {
                         console.log('[DSA Auto-Commit] Submission Accepted! Sending to background...');
-                        // Send message to content script
+
                         window.postMessage({
                             type: 'LEETCODE_SUBMISSION_ACCEPTED',
                             payload: {
@@ -59,14 +55,14 @@
                                 memoryPercentile: data.memory_percentile
                             }
                         }, '*');
-                        pendingSubmission = null; // Reset
+                        pendingSubmission = null;
                     } else if (data.status_msg) {
                         console.log(`[DSA Auto-Commit] Submission finished with status: ${data.status_msg}. Not committing.`);
-                        pendingSubmission = null; // Reset on failure (Wrong Answer, TLE, etc.)
+                        pendingSubmission = null;
                     }
                 }
             }).catch(e => {
-                // Ignore JSON parse errors for non-JSON responses
+
             });
         }
 

@@ -5,7 +5,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const saveBtn = document.getElementById('save-btn');
     const statusMsg = document.getElementById('status-msg');
 
-    // Load saved settings
     chrome.storage.local.get(['githubPat', 'githubRepo', 'githubFolder'], (result) => {
         if (result.githubPat) patInput.value = result.githubPat;
         if (result.githubRepo) repoInput.value = result.githubRepo;
@@ -17,7 +16,6 @@ document.addEventListener('DOMContentLoaded', () => {
         let repo = repoInput.value.trim();
         let folder = folderInput.value.trim();
 
-        // Auto-parse full GitHub URLs if pasted
         if (repo.includes('github.com') || repo.includes('tree/')) {
             try {
                 let urlStr = repo;
@@ -28,18 +26,15 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (pathParts.length >= 2) {
                     repo = `${pathParts[0]}/${pathParts[1]}`;
                     
-                    // If they pasted a tree URL, extract the folder automatically
                     if (pathParts.length > 4 && pathParts[2] === 'tree') {
                         folder = pathParts.slice(4).join('/');
-                        folderInput.value = folder; // Update UI to show the parsed folder
+                        folderInput.value = folder;
                     }
                 }
             } catch (e) {
-                // ignore
             }
         }
         
-        // Clean up the UI
         repoInput.value = repo;
 
         if (!pat || !repo) {
@@ -52,11 +47,9 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
-        // Disable button while saving/validating
         saveBtn.disabled = true;
         saveBtn.textContent = 'Saving...';
 
-        // Save to storage
         chrome.storage.local.set({
             githubPat: pat,
             githubRepo: repo,

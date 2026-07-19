@@ -25,7 +25,7 @@ class GitHubAPI {
             try {
                 const err = await response.json();
                 errMsg = err.message;
-            } catch(e) {}
+            } catch (e) { }
             throw new Error(`GitHub API Error (${response.status}) on ${method} ${endpoint}: ${errMsg}`);
         }
         return await response.json();
@@ -50,7 +50,6 @@ class GitHubAPI {
         try {
             const data = await this.request('GET', `/contents/${path}`);
             if (data.type === 'file' && data.content) {
-                // decode base64 to utf-8
                 const text = atob(data.content.replace(/\n/g, ''));
                 const bytes = new Uint8Array(text.length);
                 for (let i = 0; i < text.length; i++) {
@@ -62,7 +61,7 @@ class GitHubAPI {
             return null;
         } catch (error) {
             if (error.message.includes('(404)') || error.message.includes('Not Found')) {
-                return null; // File does not exist
+                return null;
             }
             throw error;
         }
@@ -79,7 +78,7 @@ class GitHubAPI {
     async createTree(baseTreeSha, files) {
         const tree = files.map(file => ({
             path: file.path,
-            mode: '100644', // regular file
+            mode: '100644',
             type: 'blob',
             sha: file.sha
         }));
@@ -112,7 +111,7 @@ class GitHubAPI {
             const branch = await this.getDefaultBranch();
             const latestCommitSha = await this.getLatestCommitSha(branch);
             const baseTreeSha = await this.getBaseTreeSha(latestCommitSha);
-            
+
             const createdFiles = [];
             for (const file of files) {
                 const blobSha = await this.createBlob(file.content);
@@ -125,7 +124,7 @@ class GitHubAPI {
             const newTreeSha = await this.createTree(baseTreeSha, createdFiles);
             const newCommitSha = await this.createCommit(message, newTreeSha, latestCommitSha);
             await this.updateBranchRef(branch, newCommitSha);
-            
+
             return true;
         } catch (error) {
             console.error('[DSA Auto-Commit] Failed to commit files:', error);

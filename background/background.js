@@ -30,7 +30,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     console.log('[DSA Auto-Commit] Background received message:', request);
     if (request.action === 'commitSolution') {
         const payload = request.data;
-        
+
         chrome.storage.local.get(['githubPat', 'githubRepo', 'githubFolder'], async (result) => {
             if (!result.githubPat || !result.githubRepo) {
                 console.warn('[DSA Auto-Commit] GitHub PAT or Repo not configured. Please set them in the popup.');
@@ -40,42 +40,41 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 
             try {
                 const api = new GitHubAPI(result.githubPat, result.githubRepo);
-                
+
                 const problemSlug = payload.problemSlug;
                 let filePath = `${problemSlug}.md`;
-                
+
                 if (result.githubFolder) {
                     const cleanFolder = result.githubFolder.replace(/^\/+|\/+$/g, '');
                     if (cleanFolder) {
                         filePath = `${cleanFolder}/${filePath}`;
                     }
                 }
-                
+
                 const questionTitle = payload.questionTitle || payload.problemSlug;
                 const difficulty = payload.difficulty || 'Unknown';
                 const questionHtml = payload.questionContent || '';
-                
+
                 const langDisplay = getLanguageDisplayName(payload.lang);
                 const codeBlockLang = getMarkdownCodeBlockLang(payload.lang);
-                
+
                 const newCodeSection = `#### ${langDisplay}\n\n\`\`\`${codeBlockLang}\n${payload.code}\n\`\`\`\n`;
 
                 let finalContent = '';
-                
-                // Try to get existing file
+
                 const existingContent = await api.getFile(filePath);
-                
+
                 if (existingContent) {
-                    // Update existing content
+
                     const tabsStart = '<!-- tabs:start -->';
                     const tabsEnd = '<!-- tabs:end -->';
-                    
+
                     const startIndex = existingContent.indexOf(tabsStart);
                     const endIndex = existingContent.indexOf(tabsEnd);
-                    
+
                     if (startIndex !== -1 && endIndex !== -1) {
                         let tabsContent = existingContent.substring(startIndex + tabsStart.length, endIndex);
-                        
+
                         // Check if language already exists and replace it, otherwise append
                         const escapedLang = escapeRegExp(langDisplay);
                         const langRegex = new RegExp(`#### ${escapedLang}[\\s\\S]*?(?=#### |$)`);
@@ -84,10 +83,10 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
                         } else {
                             tabsContent += '\n' + newCodeSection;
                         }
-                        
-                        finalContent = existingContent.substring(0, startIndex + tabsStart.length) 
-                                     + tabsContent 
-                                     + existingContent.substring(endIndex);
+
+                        finalContent = existingContent.substring(0, startIndex + tabsStart.length)
+                            + tabsContent
+                            + existingContent.substring(endIndex);
                     } else {
                         // Append to the end if tabs block is missing for some reason
                         finalContent = existingContent + `\n${tabsStart}\n\n${newCodeSection}\n${tabsEnd}\n`;
@@ -126,7 +125,7 @@ ${newCodeSection}
                 ];
 
                 const commitMsg = `Add/Update solution for ${problemSlug} [${langDisplay}]`;
-                
+
                 console.log(`[DSA Auto-Commit] Committing ${filePath}...`);
                 await api.commitFiles(commitMsg, files);
                 console.log(`[DSA Auto-Commit] Successfully committed ${filePath} to GitHub.`);
@@ -137,7 +136,7 @@ ${newCodeSection}
                 sendResponse({ success: false, error: error.toString() });
             }
         });
-        
-        return true; 
+
+        return true;
     }
 });
