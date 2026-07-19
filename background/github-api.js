@@ -13,15 +13,20 @@ class GitHubAPI {
     async request(method, endpoint, body = null) {
         const options = {
             method,
-            headers: this.headers
+            headers: this.headers,
+            cache: 'no-store'
         };
         if (body) {
             options.body = JSON.stringify(body);
         }
         const response = await fetch(`${this.baseUrl}${endpoint}`, options);
         if (!response.ok) {
-            const err = await response.json();
-            throw new Error(`GitHub API Error (${response.status}): ${err.message}`);
+            let errMsg = 'Unknown error';
+            try {
+                const err = await response.json();
+                errMsg = err.message;
+            } catch(e) {}
+            throw new Error(`GitHub API Error (${response.status}) on ${method} ${endpoint}: ${errMsg}`);
         }
         return await response.json();
     }
@@ -39,6 +44,28 @@ class GitHubAPI {
     async getBaseTreeSha(commitSha) {
         const data = await this.request('GET', `/git/commits/${commitSha}`);
         return data.tree.sha;
+    }
+
+    async getFile(path) {
+        try {
+            const data = await this.request('GET', `/contents/${path}`);
+            if (data.type === 'file' && data.content) {
+                // decode base64 to utf-8
+                const text = atob(data.content.replace(/\n/g, ''));
+                const bytes = new Uint8Array(text.length);
+                for (let i = 0; i < text.length; i++) {
+                    bytes[i] = text.charCodeAt(i);
+                }
+                const decoder = new TextDecoder('utf-8');
+                return decoder.decode(bytes);
+            }
+            return null;
+        } catch (error) {
+            if (error.message.includes('(404)') || error.message.includes('Not Found')) {
+                return null; // File does not exist
+            }
+            throw error;
+        }
     }
 
     async createBlob(content) {

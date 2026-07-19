@@ -55,8 +55,12 @@ window.addEventListener('message', async (event) => {
         }, (response) => {
             if (chrome.runtime.lastError) {
                 console.error('[DSA Auto-Commit Content Script] Failed to reach background script:', chrome.runtime.lastError.message);
-            } else {
-                console.log('[DSA Auto-Commit Content Script] Background script acknowledged receipt!');
+            } else if (response) {
+                if (response.success) {
+                    console.log('%c[DSA Auto-Commit] SUCCESS: ' + response.message, 'color: #00FF00; font-weight: bold; font-size: 14px;');
+                } else {
+                    console.error('[DSA Auto-Commit] FAILED: ' + response.error);
+                }
             }
         });
     }
