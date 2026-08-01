@@ -2,19 +2,22 @@ document.addEventListener('DOMContentLoaded', () => {
     const patInput = document.getElementById('pat');
     const repoInput = document.getElementById('repo');
     const folderInput = document.getElementById('folder');
+    const gfgFolderInput = document.getElementById('gfg-folder');
     const saveBtn = document.getElementById('save-btn');
     const statusMsg = document.getElementById('status-msg');
 
-    chrome.storage.local.get(['githubPat', 'githubRepo', 'githubFolder'], (result) => {
+    chrome.storage.local.get(['githubPat', 'githubRepo', 'githubFolder', 'gfgFolder'], (result) => {
         if (result.githubPat) patInput.value = result.githubPat;
         if (result.githubRepo) repoInput.value = result.githubRepo;
         if (result.githubFolder) folderInput.value = result.githubFolder;
+        if (result.gfgFolder) gfgFolderInput.value = result.gfgFolder;
     });
 
     saveBtn.addEventListener('click', () => {
         const pat = patInput.value.trim();
         let repo = repoInput.value.trim();
         let folder = folderInput.value.trim();
+        let gfgFolder = gfgFolderInput.value.trim();
 
         if (repo.includes('github.com') || repo.includes('tree/')) {
             try {
@@ -53,7 +56,8 @@ document.addEventListener('DOMContentLoaded', () => {
         chrome.storage.local.set({
             githubPat: pat,
             githubRepo: repo,
-            githubFolder: folder
+            githubFolder: folder,
+            gfgFolder: gfgFolder
         }, () => {
             saveBtn.disabled = false;
             saveBtn.textContent = 'Save Settings';
