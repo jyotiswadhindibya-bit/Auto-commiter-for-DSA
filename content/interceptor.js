@@ -248,4 +248,98 @@
         };
         return xhr;
     };
+
+    // --- FORM INTERCEPTOR (Codeforces) ---
+    function isCodeforcesSubmitForm(form) {
+        if (!form) return false;
+        if (form.classList && form.classList.contains('submit-form')) return true;
+        if (typeof form.querySelector === 'function') {
+            const actionInput = form.querySelector('input[name="action"]');
+            if (actionInput && actionInput.value === 'submitSolution') return true;
+        }
+        let actionUrl = '';
+        if (typeof form.getAttribute === 'function') actionUrl = form.getAttribute('action') || '';
+        return (actionUrl && typeof actionUrl === 'string' && actionUrl.includes('/submit'));
+    }
+
+    const originalFormSubmit = HTMLFormElement.prototype.submit;
+    HTMLFormElement.prototype.submit = function() {
+        try {
+            if (typeof window !== 'undefined' && window.location.hostname.includes('codeforces.com')) {
+                if (isCodeforcesSubmitForm(this)) {
+                    captureCodeforcesForm(this);
+                }
+            }
+        } catch(e) {}
+        return originalFormSubmit.apply(this, arguments);
+    };
+    
+    document.addEventListener('submit', (e) => {
+        try {
+            if (window.location.hostname.includes('codeforces.com') && e.target) {
+                if (isCodeforcesSubmitForm(e.target)) {
+                    captureCodeforcesForm(e.target);
+                }
+            }
+        } catch(e) {}
+    });
+
+    function captureCodeforcesForm(form) {
+        try {
+            let code = '';
+            if (window.monaco && window.monaco.editor && window.monaco.editor.getModels().length > 0) {
+                code = window.monaco.editor.getModels()[0].getValue();
+            } else if (window.ace) {
+                const env = window.ace.edit("editor");
+                if (env) code = env.getValue();
+            }
+            
+            if (!code) {
+                const editorEl = form.querySelector('[name="source"]');
+                if (editorEl) code = editorEl.value;
+            }
+            
+            if (code) {
+                let problemSlug = 'Unknown';
+                const urlMatch = window.location.href.match(/(?:problemset\/problem\/(\d+)\/([A-Z0-9]+))|(?:contest\/(\d+)\/problem\/([A-Z0-9]+))/);
+                if (urlMatch) {
+                    if (urlMatch[1] && urlMatch[2]) problemSlug = urlMatch[1] + urlMatch[2];
+                    else if (urlMatch[3] && urlMatch[4]) problemSlug = urlMatch[3] + urlMatch[4];
+                } else {
+                    const probEl = form.querySelector('[name="submittedProblemCode"]');
+                    if (probEl && probEl.value) problemSlug = probEl.value;
+                }
+
+                const langSelect = form.querySelector('[name="programTypeId"]');
+                let langName = 'Unknown';
+                if (langSelect && langSelect.options && langSelect.selectedIndex >= 0) {
+                    const cfLang = langSelect.options[langSelect.selectedIndex].text.toLowerCase();
+                    if (cfLang.includes('cpp') || cfLang.includes('c++')) langName = 'cpp';
+                    else if (cfLang.includes('java')) langName = 'java';
+                    else if (cfLang.includes('python')) langName = 'python';
+                    else if (cfLang.includes('js') || cfLang.includes('javascript')) langName = 'javascript';
+                    else if (cfLang.includes('c#')) langName = 'csharp';
+                    else if (cfLang.includes('ruby')) langName = 'ruby';
+                    else if (cfLang.includes('php')) langName = 'php';
+                    else if (cfLang.includes('go')) langName = 'golang';
+                    else if (cfLang.includes('rust')) langName = 'rust';
+                    else if (cfLang.includes('kotlin')) langName = 'kotlin';
+                    else langName = cfLang.split(' ')[0];
+                }
+
+                const payload = {
+                    platform: 'codeforces',
+                    problemSlug: problemSlug,
+                    questionTitle: problemSlug,
+                    code: code,
+                    lang: langName,
+                    problemUrl: window.location.href
+                };
+                
+                // Directly set it in sessionStorage to avoid postMessage macro-task race condition on navigation!
+                sessionStorage.setItem('cf_pending_msg', JSON.stringify(payload));
+                console.log('[DSA Auto-Commit] Captured Codeforces submission synchronously:', payload.problemSlug);
+            }
+        } catch (e) {}
+    }
 })();

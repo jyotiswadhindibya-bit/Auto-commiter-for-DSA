@@ -125,3 +125,58 @@ window.addEventListener('message', async (event) => {
         });
     }
 });
+
+// Codeforces Integration (DOM Observer)
+if (window.location.hostname === 'codeforces.com') {
+    console.log('[DSA Auto-Commit] Codeforces Content Script active.');
+
+    // 2. Watch for Accepted (only matters on status page)
+    if (window.location.href.includes('/status') || window.location.href.includes('/my')) {
+        const pendingStr = sessionStorage.getItem('cf_pending_msg');
+        if (pendingStr) {
+            const payload = JSON.parse(pendingStr);
+            
+            const checkVerdict = (firstCell, observer) => {
+                const text = firstCell.textContent.trim();
+                // Codeforces sometimes animates "Running on test 1..." before final verdict
+                if (text === 'Accepted' || text === 'Pretests passed') {
+                    console.log('[DSA Auto-Commit] Codeforces Submission Accepted! Sending to background...');
+                    chrome.runtime.sendMessage({
+                        action: 'commitSolution',
+                        data: payload
+                    });
+                    sessionStorage.removeItem('cf_pending_msg');
+                    if (observer) observer.disconnect();
+                    return true;
+                } else if (text !== '' && !text.toLowerCase().includes('running') && !text.toLowerCase().includes('in queue') && text !== 'Testing') {
+                    // It finished but failed (e.g., Wrong Answer, TLE, CE)
+                    console.log('[DSA Auto-Commit] Codeforces submission finished with verdict:', text);
+                    sessionStorage.removeItem('cf_pending_msg');
+                    if (observer) observer.disconnect();
+                    return true;
+                }
+                return false;
+            };
+
+            const table = document.querySelector('.status-frame-datatable');
+            if (table) {
+                // Monitor for dynamic websocket updates
+                const observer = new MutationObserver((mutations) => {
+                    const statusCells = document.querySelectorAll('td.status-verdict-cell');
+                    if (statusCells.length > 0) {
+                        checkVerdict(statusCells[0], observer);
+                    }
+                });
+
+                observer.observe(table, { childList: true, subtree: true, characterData: true });
+
+                // Check immediately just in case it's already populated on page load
+                const statusCells = document.querySelectorAll('td.status-verdict-cell');
+                if (statusCells.length > 0) {
+                    checkVerdict(statusCells[0], observer);
+                }
+            }
+        }
+    }
+}
+

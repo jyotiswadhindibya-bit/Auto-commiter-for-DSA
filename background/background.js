@@ -32,7 +32,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         const payload = request.data;
         if (!payload || !payload.code) return;
 
-        chrome.storage.local.get(['githubPat', 'githubRepo', 'githubFolder', 'gfgFolder'], async (result) => {
+        chrome.storage.local.get(['githubPat', 'githubRepo', 'githubFolder', 'gfgFolder', 'cfFolder'], async (result) => {
             if (!result.githubPat || !result.githubRepo) {
                 console.error('[DSA Auto-Commit] Missing GitHub credentials. Please configure the extension.');
                 sendResponse({ success: false, error: 'GitHub PAT or Repo not configured' });
@@ -51,6 +51,10 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
                 if (payload.platform === 'gfg') {
                     if (result.gfgFolder) {
                         targetFolder = result.gfgFolder.replace(/^\/+|\/+$/g, '') + '/';
+                    }
+                } else if (payload.platform === 'codeforces') {
+                    if (result.cfFolder) {
+                        targetFolder = result.cfFolder.replace(/^\/+|\/+$/g, '') + '/';
                     }
                 } else {
                     if (result.githubFolder) {
@@ -109,9 +113,14 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
                                        finalContent.substring(dEndIdx);
                     }
                 } else {
-                    const titleUrl = payload.platform === 'gfg' 
-                        ? `https://practice.geeksforgeeks.org/problems/${problemSlug}`
-                        : `https://leetcode.com/problems/${problemSlug}`;
+                    let titleUrl = '';
+                    if (payload.platform === 'gfg') {
+                        titleUrl = `https://practice.geeksforgeeks.org/problems/${problemSlug}`;
+                    } else if (payload.platform === 'codeforces') {
+                        titleUrl = payload.problemUrl || `https://codeforces.com/problemset/problem/${problemSlug.replace(/[^\d]/g, '')}/${problemSlug.replace(/[\d]/g, '')}`;
+                    } else {
+                        titleUrl = `https://leetcode.com/problems/${problemSlug}`;
+                    }
 
                     finalContent = `<!-- problem:start -->
 

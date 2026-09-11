@@ -3,14 +3,16 @@ document.addEventListener('DOMContentLoaded', () => {
     const repoInput = document.getElementById('repo');
     const folderInput = document.getElementById('folder');
     const gfgFolderInput = document.getElementById('gfg-folder');
+    const cfFolderInput = document.getElementById('cf-folder');
     const saveBtn = document.getElementById('save-btn');
     const statusMsg = document.getElementById('status-msg');
 
-    chrome.storage.local.get(['githubPat', 'githubRepo', 'githubFolder', 'gfgFolder'], (result) => {
+    chrome.storage.local.get(['githubPat', 'githubRepo', 'githubFolder', 'gfgFolder', 'cfFolder'], (result) => {
         if (result.githubPat) patInput.value = result.githubPat;
         if (result.githubRepo) repoInput.value = result.githubRepo;
         if (result.githubFolder) folderInput.value = result.githubFolder;
         if (result.gfgFolder) gfgFolderInput.value = result.gfgFolder;
+        if (result.cfFolder) cfFolderInput.value = result.cfFolder;
     });
 
     saveBtn.addEventListener('click', () => {
@@ -18,6 +20,7 @@ document.addEventListener('DOMContentLoaded', () => {
         let repo = repoInput.value.trim();
         let folder = folderInput.value.trim();
         let gfgFolder = gfgFolderInput.value.trim();
+        let cfFolder = cfFolderInput.value.trim();
 
         if (repo.includes('github.com') || repo.includes('tree/')) {
             try {
@@ -57,7 +60,8 @@ document.addEventListener('DOMContentLoaded', () => {
             githubPat: pat,
             githubRepo: repo,
             githubFolder: folder,
-            gfgFolder: gfgFolder
+            gfgFolder: gfgFolder,
+            cfFolder: cfFolder
         }, () => {
             saveBtn.disabled = false;
             saveBtn.textContent = 'Save Settings';

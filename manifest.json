@@ -10,7 +10,9 @@
   "host_permissions": [
     "https://leetcode.com/*",
     "https://*.geeksforgeeks.org/*",
-    "https://api.github.com/*"
+    "https://api.github.com/*",
+    "*://*.codeforces.com/*",
+    "*://codeforces.com/*"
   ],
   "action": {
     "default_popup": "popup/popup.html"
@@ -26,7 +28,9 @@
         "https://leetcode.com/problems/*",
         "https://practice.geeksforgeeks.org/problems/*",
         "https://www.geeksforgeeks.org/problems/*",
-        "https://geeksforgeeks.org/problems/*"
+        "https://geeksforgeeks.org/problems/*",
+        "*://*.codeforces.com/*",
+        "*://codeforces.com/*"
       ],
       "js": ["content/content.js"],
       "run_at": "document_idle"
@@ -37,7 +41,9 @@
       "resources": ["content/interceptor.js"],
       "matches": [
         "https://leetcode.com/*",
-        "https://*.geeksforgeeks.org/*"
+        "https://*.geeksforgeeks.org/*",
+        "*://*.codeforces.com/*",
+        "*://codeforces.com/*"
       ]
     }
   ]
